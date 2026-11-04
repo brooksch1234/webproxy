@@ -23,7 +23,8 @@ const host = process.env.HOST || "0.0.0.0";
 wisp.options.allow_loopback_ips = false;
 wisp.options.allow_private_ips = false;
 wisp.options.allow_direct_ip = false;
-wisp.options.stream_limit_per_host = 64;
+// stream_limit_per_host is broken in wisp-js 0.4.1 (it iterates a plain
+// object with for..of and throws), so only the total cap is set here.
 wisp.options.stream_limit_total = 256;
 
 const server = http.createServer((req, res) => {
