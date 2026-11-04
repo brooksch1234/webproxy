@@ -976,11 +976,12 @@
 			<div class="body">
 				<div class="field">
 					<label for="wisp-input">Wisp server</label>
-					<input id="wisp-input" type="text" spellcheck="false" placeholder="wss://wisp.example.com/" />
+					<input id="wisp-input" type="text" spellcheck="false" placeholder="Auto — or wss://your-wisp.example/" />
 					<p class="help">
-						Traffic leaves through this server. The default is a free public
-						instance; for anything permanent, host your own
-						<code>wisp-server-node</code> and paste its <code>wss://</code> URL here.
+						Traffic leaves through this server. Traffic leaves through this server. Leave the field empty and BW Nexus tries
+						a short list of public servers, keeping the first that connects. For
+						anything permanent, host your own (<code>wisp/</code> in this repo) and
+						paste its <code>wss://</code> URL here.
 					</p>
 				</div>
 
@@ -1028,7 +1029,13 @@
 				all: "/scramjet.all.js",
 				sync: "/scramjet.sync.js",
 			};
-			const DEFAULT_WISP = "wss://anura.pro/";
+			// Tried in order on boot; the first server that completes a WebSocket
+			// handshake wins. The first entry is what the official Scramjet demo ships.
+			const WISP_SERVERS = [
+				"wss://anura.pro/",
+				"wss://wisp.mercurywork.shop/",
+			];
+			const DEFAULT_WISP = WISP_SERVERS[0];
 
 			const ENGINES = {
 				google: { label: "Google", url: "https://www.google.com/search?q=%s" },
@@ -1075,7 +1082,7 @@
 				browsing: false,
 				current: "",
 				engineKey: store.get("engine", "google"),
-				wisp: store.get("wisp", DEFAULT_WISP),
+				wisp: store.get("wisp", ""),
 				loaderTimer: 0,
 				slowTimer: 0,
 				toastTimer: 0,
@@ -1235,6 +1242,52 @@
 				return name;
 			}
 
+			/* --------------------------- wisp selection --------------------------- */
+
+			function probeWisp(url, timeout = 4500) {
+				return new Promise((resolve) => {
+					let socket = null;
+					let settled = false;
+					const finish = (ok) => {
+						if (settled) return;
+						settled = true;
+						clearTimeout(timer);
+						try {
+							if (socket) socket.close();
+						} catch {
+							/* already closed */
+						}
+						resolve(ok);
+					};
+					const timer = setTimeout(() => finish(false), timeout);
+					try {
+						socket = new WebSocket(url, ["wisp"]);
+					} catch {
+						finish(false);
+						return;
+					}
+					socket.addEventListener("open", () => finish(true), { once: true });
+					socket.addEventListener("error", () => finish(false), { once: true });
+					socket.addEventListener("close", () => finish(false), { once: true });
+				});
+			}
+
+			async function pickWisp() {
+				const manual = (store.get("wisp", "") || "").trim();
+				if (manual) return manual;
+
+				setStatus("starting", "Finding a Wisp server…");
+				for (const candidate of WISP_SERVERS) {
+					if (await probeWisp(candidate)) {
+						if (candidate !== WISP_SERVERS[0]) {
+							toast("Using " + prettyHost(candidate) + " as the Wisp server.");
+						}
+						return candidate;
+					}
+				}
+				return DEFAULT_WISP;
+			}
+
 			async function boot() {
 				clearError();
 				setStatus("starting", "Starting…");
@@ -1301,6 +1354,10 @@
 						hideLoader();
 					});
 
+					if (!state.wisp) {
+						state.wisp = await pickWisp();
+						el.wispInput.value = state.wisp;
+					}
 					await connectTransport(state.wisp);
 
 					state.ready = true;

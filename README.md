@@ -36,12 +36,12 @@ plain HTTP (localhost is the only exception).
 ## The proxy server (Wisp)
 
 BW Nexus is only the browser; it still needs a **Wisp server** to carry traffic.
-The default is `wss://anura.pro/` — the same endpoint the official
-[Scramjet demo](https://scramjet.mercurywork.shop/) ships with, which is why it
-tends to survive filters that block the older `wss://wisp.mercurywork.shop/`.
-It is still someone else's demo server: shared, rate limited, and it can vanish.
-For anything permanent, run your own: `wisp/` in this repo is a ready-to-deploy
-server built on the current
+It tries `wss://anura.pro/` (what the official
+[Scramjet demo](https://scramjet.mercurywork.shop/) ships) and then
+`wss://wisp.mercurywork.shop/`, using the first that completes a WebSocket
+handshake, so one blocked host does not brick the app. Both are somebody else's
+shared demo servers. For anything permanent, run your own: `wisp/` in this repo
+is a ready-to-deploy server built on the current
 [`@mercuryworkshop/wisp-js`](https://github.com/MercuryWorkshop/wisp-js) (the
 older `wisp-server-node` is deprecated upstream).
 
