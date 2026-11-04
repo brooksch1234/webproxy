@@ -29,6 +29,13 @@
 		border:1px solid #43233f; color:#ffd7e6; padding:10px 12px; border-radius:10px;
 		font-size:13px; display:none; }
 	#banner.show { display:block; }
+	#error { position:absolute; inset:53px 0 0; display:none; align-items:center; justify-content:center;
+		background:rgba(7,9,18,.97); padding:24px; }
+	#error.show { display:flex; }
+	.card { max-width:560px; background:#121727; border:1px solid #2a2140; border-radius:14px; padding:22px 24px; }
+	.card h2 { margin:0 0 8px; font-size:18px; }
+	.card p { margin:0 0 16px; color:#c3cbe0; font-size:14px; }
+	.card .row { display:flex; gap:10px; flex-wrap:wrap; }
 </style>
 </head>
 <body>
@@ -42,6 +49,17 @@
 	<a class="link" href="/index.html">Scramjet</a>
 </header>
 <main><iframe id="frame" title="Ultraviolet proxied page"></iframe></main>
+<section id="error" aria-live="assertive">
+	<div class="card">
+		<h2>Both engines failed</h2>
+		<p id="error-text"></p>
+		<div class="row">
+			<button id="retry" type="button">Retry the test</button>
+			<a class="link" href="/index.html">Try Scramjet again</a>
+		</div>
+	</div>
+</section>
+
 <div id="banner"></div>
 
 <script src="/uv/uv.bundle.js"></script>
@@ -65,7 +83,12 @@
 	const el = {
 		frame: $("frame"), address: $("address"), status: $("status"), banner: $("banner"),
 		back: $("back"), forward: $("forward"), reload: $("reload"),
+		error: $("error"), errorText: $("error-text"), retry: $("retry"),
 	};
+
+	const TEST_URL = "https://example.com/";
+	const TEST_MARKER = "Example Domain";
+	const TEST_TIMEOUT = 20000;
 
 	let ready = false;
 
@@ -160,7 +183,56 @@
 		}
 	}
 
+	function showError(message) {
+		el.errorText.textContent = message;
+		el.error.classList.add("show");
+	}
+
+	function hideError() {
+		el.error.classList.remove("show");
+	}
+
+	function loadProbe(url, marker, timeout = TEST_TIMEOUT) {
+		return new Promise((resolve) => {
+			const frame = document.createElement("iframe");
+			frame.setAttribute("aria-hidden", "true");
+			frame.style.cssText =
+				"position:fixed;left:-9999px;top:0;width:320px;height:240px;opacity:0;pointer-events:none;border:0";
+			let settled = false;
+			const finish = (ok, detail) => {
+				if (settled) return;
+				settled = true;
+				clearInterval(poll);
+				clearTimeout(timer);
+				try { frame.remove(); } catch {}
+				resolve({ ok, detail });
+			};
+			const check = () => {
+				try {
+					const body = frame.contentDocument && frame.contentDocument.body;
+					if (body && body.innerText.includes(marker)) finish(true, "loaded");
+				} catch {
+					/* not readable yet */
+				}
+			};
+			const poll = setInterval(check, 500);
+			const timer = setTimeout(
+				() => finish(false, "timed out after " + Math.round(timeout / 1000) + "s"),
+				timeout
+			);
+			frame.addEventListener("load", check);
+			frame.src = url;
+			document.body.appendChild(frame);
+		});
+	}
+
+	async function runSelfTest() {
+		return loadProbe(PREFIX + self.__uv$config.encodeUrl(TEST_URL), TEST_MARKER);
+	}
+
 	async function boot() {
+		ready = false;
+		hideError();
 		setStatus("starting", "Starting…");
 
 		if (!("serviceWorker" in navigator)) {
@@ -191,6 +263,20 @@
 				setStatus("online", "UV · wisp");
 			}
 
+			setStatus("starting", "Testing the engine…");
+			const probe = await runSelfTest();
+			if (!probe.ok) {
+				console.warn("[BW Nexus] Ultraviolet self-test failed:", probe.detail);
+				setStatus("offline", "Test failed");
+				showError(
+					"Ultraviolet started, but could not open a test page through " +
+						(bare ? "the Bare server" : "the Wisp server") +
+						" (" + probe.detail + "). That server is probably blocked or offline. " +
+						"Fix it in the other engine's settings, or run your own server."
+				);
+				return;
+			}
+
 			ready = true;
 			el.back.disabled = false;
 			el.forward.disabled = false;
@@ -212,6 +298,7 @@
 	el.forward.addEventListener("click", () => { try { el.frame.contentWindow.history.forward(); } catch {} });
 	el.reload.addEventListener("click", () => { try { el.frame.contentWindow.location.reload(); } catch {} });
 	el.frame.addEventListener("load", syncFromFrame);
+	el.retry.addEventListener("click", () => boot());
 
 	boot();
 </script>

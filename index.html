@@ -1047,6 +1047,12 @@
 			];
 			const DEFAULT_WISP = WISP_SERVERS[0];
 
+			// Boot self-test: nothing is reported "online" until a real page has
+			// rendered through the engine.
+			const TEST_URL = "https://example.com/";
+			const TEST_MARKER = "Example Domain";
+			const TEST_TIMEOUT = 20000;
+
 			const ENGINES = {
 				google: { label: "Google", url: "https://www.google.com/search?q=%s" },
 				duckduckgo: { label: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
@@ -1311,6 +1317,53 @@
 				return DEFAULT_WISP;
 			}
 
+			/* ----------------------------- self-test ------------------------------ */
+
+			function loadProbe(url, marker, timeout = TEST_TIMEOUT) {
+				return new Promise((resolve) => {
+					const frame = document.createElement("iframe");
+					frame.setAttribute("aria-hidden", "true");
+					frame.style.cssText =
+						"position:fixed;left:-9999px;top:0;width:320px;height:240px;opacity:0;pointer-events:none;border:0";
+					let settled = false;
+					const finish = (ok, detail) => {
+						if (settled) return;
+						settled = true;
+						clearInterval(poll);
+						clearTimeout(timer);
+						try {
+							frame.remove();
+						} catch {
+							/* already gone */
+						}
+						resolve({ ok, detail });
+					};
+					const check = () => {
+						try {
+							const body = frame.contentDocument && frame.contentDocument.body;
+							if (body && body.innerText.includes(marker)) finish(true, "loaded");
+						} catch {
+							/* not readable yet */
+						}
+					};
+					const poll = setInterval(check, 500);
+					const timer = setTimeout(
+						() => finish(false, "timed out after " + Math.round(timeout / 1000) + "s"),
+						timeout
+					);
+					frame.addEventListener("load", check);
+					frame.src = url;
+					document.body.appendChild(frame);
+				});
+			}
+
+			async function engineSelfTest() {
+				const encoded = state.controller && state.controller.encodeUrl
+					? state.controller.encodeUrl(TEST_URL)
+					: PREFIX + encodeURIComponent(TEST_URL);
+				return loadProbe(location.origin + encoded, TEST_MARKER);
+			}
+
 			async function boot() {
 				clearError();
 				setStatus("starting", "Starting…");
@@ -1383,6 +1436,20 @@
 				el.bareInput.value = state.bare;
 					}
 					await connectTransport(state.wisp);
+
+					setStatus("starting", "Testing the engine…");
+					const probe = await engineSelfTest();
+					if (!probe.ok) {
+						console.warn("[BW Nexus] Scramjet self-test failed:", probe.detail);
+						setStatus("starting", "Trying Ultraviolet…");
+						try {
+							sessionStorage.setItem("bwnexus.handoff", "scramjet");
+						} catch {
+							/* storage may be disabled */
+						}
+						location.replace("/uv.html");
+						return;
+					}
 
 					state.ready = true;
 					setStatus("online", "Engine online");
