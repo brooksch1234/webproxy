@@ -2,3 +2,4 @@
 .DS_Store
 node_modules/
 /freebuff-sites-build/
+/dist/

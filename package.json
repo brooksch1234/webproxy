@@ -1,0 +1,10 @@
+{
+	"name": "bw-nexus",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"description": "BW Nexus — Scramjet/Ultraviolet web proxy, plus its own Wisp server",
+	"scripts": {
+		"build": "node build-sites.mjs"
+	}
+}
