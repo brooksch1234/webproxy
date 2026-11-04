@@ -10,8 +10,11 @@ export default {
 
 		// Entry documents and both service workers must never be served stale,
 		// otherwise a browser keeps an old worker and the engine silently breaks.
+		// "/uv" is where the assets layer redirects uv.html, so it needs the
+		// same rule as the .html path it came from.
 		const uncached =
 			url.pathname === "/" ||
+			url.pathname === "/uv" ||
 			url.pathname.endsWith(".html") ||
 			url.pathname === "/sw.js" ||
 			url.pathname === "/uv/sw.js";
