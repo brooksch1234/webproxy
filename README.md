@@ -18,6 +18,9 @@ browser forces us to keep separate (explained below).
 | `mux.js` | BareMux transport `SharedWorker` (vendored, v2.1.9). Also same-origin only. |
 | `baremux.mjs` | BareMux browser client, imported by `index.html` (vendored, v2.1.9). |
 | `epoxy.mjs` | Epoxy transport that carries requests over the Wisp server (vendored, v2.1.29). |
+| `uv.html` | The Ultraviolet engine's page — same settings, different engine. |
+| `uv/` | Ultraviolet 3.2.10 vendored from npm (`uv.bundle.js`, `uv.sw.js`, `uv.handler.js`, `uv.client.js`) plus BW Nexus's `uv.config.js` and `sw.js`. |
+| `baremod.mjs` | Bare v3 client used as a bare-mux transport — the option that avoids Wisp. |
 
 ## Running it
 
@@ -80,6 +83,35 @@ is rebuilt, so use it for testing rather than daily use.
 An open Wisp server is an open proxy: anyone with the URL can route traffic
 through it. `wisp/server.mjs` blocks loopback/private/direct-IP targets and caps
 concurrent streams; add firewall or rate limits of your own if you publish it.
+
+## Engines
+
+- **Scramjet** — `index.html`, the default engine.
+- **Ultraviolet** — `/uv.html`, vendored from
+  [`@titaniumnetwork-dev/ultraviolet`](https://github.com/TitaniumNetwork-dev/Ultraviolet) 3.2.10.
+  It runs under its own service worker (`/uv/sw.js`, scope `/uv/`) and reads the
+  same `bwnexus.*` settings, so a Wisp or Bare server configured once works for
+  both. Ultraviolet is deprecated upstream in favour of Scramjet; it is here
+  because it was asked for.
+
+## Skipping Wisp entirely (Bare server)
+
+Both engines can talk to a **Bare v3 server** over plain HTTPS instead of Wisp:
+put its URL in **Settings → Bare server**. That switches the transport to
+`baremod.mjs` (`@mercuryworkshop/bare-as-module3`), so no WebSocket and no Wisp
+host is involved at all.
+
+You have to run the Bare server yourself — the public ones I checked are dead or
+misconfigured (`https://tomp.app/v3/` answers `x-bare-status: 400`):
+
+```bash
+npm i @tomphttp/bare-server-node
+npx bare-server-node --port 8080
+```
+
+Then use `https://your-host/` as the Bare server URL; the server exposes `/v3/`
+itself. Note that `wisp/` is a Wisp server, not a Bare server, so it cannot
+substitute for this.
 
 ## Shortcuts
 
