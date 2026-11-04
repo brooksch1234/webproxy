@@ -986,6 +986,15 @@
 				</div>
 
 				<div class="field">
+					<label for="bare-input">Bare server (no Wisp)</label>
+					<input id="bare-input" type="text" spellcheck="false" placeholder="https://your-bare.example/" />
+					<p class="help">
+						Optional. A Bare v3 server moves traffic over plain HTTPS with no Wisp
+						server involved. Leave it empty to go through Wisp.
+					</p>
+				</div>
+
+				<div class="field">
 					<label for="search-engine">Search engine</label>
 					<select id="search-engine"></select>
 					<p class="help">Used when what you type is not a URL.</p>
@@ -994,6 +1003,7 @@
 				<div class="actions">
 					<button class="btn primary" type="button" id="save-settings">Save &amp; reconnect</button>
 					<button class="btn" type="button" id="reset-wisp">Use default</button>
+					<a class="btn" href="/uv.html" style="text-align:center;text-decoration:none">Ultraviolet engine</a>
 				</div>
 
 				<hr class="sep" />
@@ -1083,6 +1093,7 @@
 				current: "",
 				engineKey: store.get("engine", "google"),
 				wisp: store.get("wisp", ""),
+				bare: store.get("bare", ""),
 				loaderTimer: 0,
 				slowTimer: 0,
 				toastTimer: 0,
@@ -1106,6 +1117,7 @@
 				sheet: $("sheet"),
 				backdrop: $("backdrop"),
 				wispInput: $("wisp-input"),
+				bareInput: $("bare-input"),
 				searchEngine: $("search-engine"),
 				metaTransport: $("meta-transport"),
 				metaEngine: $("meta-engine"),
@@ -1236,9 +1248,18 @@
 
 			async function connectTransport(wispUrl) {
 				if (!state.mux) state.mux = new BareMuxConnection("/mux.js");
-				await state.mux.setTransport("/epoxy.mjs", [{ wisp: wispUrl }]);
-				const name = await state.mux.getTransport().catch(() => "epoxy");
-				el.metaTransport.textContent = name || "epoxy";
+
+				// A Bare server speaks plain HTTPS, so traffic never touches a Wisp
+				// server. Otherwise Epoxy carries it over Wisp.
+				const bare = (store.get("bare", "") || "").trim();
+				if (bare) {
+					await state.mux.setTransport("/baremod.mjs", [bare]);
+				} else {
+					await state.mux.setTransport("/epoxy.mjs", [{ wisp: wispUrl }]);
+				}
+
+				const name = await state.mux.getTransport().catch(() => (bare ? "bare" : "epoxy"));
+				el.metaTransport.textContent = name || (bare ? "bare" : "epoxy");
 				return name;
 			}
 
@@ -1359,6 +1380,7 @@
 					if (!state.wisp) {
 						state.wisp = await pickWisp();
 						el.wispInput.value = state.wisp;
+				el.bareInput.value = state.bare;
 					}
 					await connectTransport(state.wisp);
 
@@ -1404,8 +1426,16 @@
 					return;
 				}
 
+				const bare = (el.bareInput.value || "").trim();
+				if (bare && !/^https?:\/\//i.test(bare)) {
+					toast("A Bare server URL needs to start with https:// (or http:// locally).", "error");
+					return;
+				}
+
 				state.wisp = wisp;
 				store.set("wisp", wisp);
+				state.bare = bare;
+				store.set("bare", bare);
 
 				state.engineKey = el.searchEngine.value;
 				store.set("engine", state.engineKey);
@@ -1432,6 +1462,7 @@
 			async function resetEverything() {
 				try {
 					localStorage.removeItem("bwnexus.wisp");
+					localStorage.removeItem("bwnexus.bare");
 					localStorage.removeItem("bwnexus.engine");
 					if (window.caches) {
 						const keys = await caches.keys();
