@@ -1261,7 +1261,9 @@
 					};
 					const timer = setTimeout(() => finish(false), timeout);
 					try {
-						socket = new WebSocket(url, ["wisp"]);
+						// No subprotocol: some Wisp servers never echo "wisp" back, and a
+						// client that asked for one aborts a handshake that actually worked.
+						socket = new WebSocket(url);
 					} catch {
 						finish(false);
 						return;
