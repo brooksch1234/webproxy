@@ -33,59 +33,50 @@ Then open <http://localhost:3000>. To publish it, upload these files to any
 HTTPS static host — **HTTPS is required**, service workers are disabled on
 plain HTTP (localhost is the only exception).
 
-## The proxy server
+## The proxy server (Wisp)
 
-BW Nexus is the browser; it still needs a Wisp server to carry traffic. The
-default is the free public instance `wss://wisp.mercurywork.shop/`. It is rate
-limited and shared — for a permanent deployment run your own:
-
-```bash
-npm i wisp-server-node
-```
-
-...attach it to any Node/Wisp host, then put your `wss://` URL in
-**Settings → Wisp server** inside BW Nexus (it is stored in `localStorage`).
-
-## Hosting on Amazon S3 (+ CloudFront)
-
-The site is plain static files, so an S3 bucket is enough for storage — but S3's
-website endpoint (`http://…s3-website-….amazonaws.com`) is **HTTP-only**, and the
-service worker needs a secure context. Put CloudFront (or Cloudflare) in front
-of the bucket, or the engine will fail to boot with a connection error.
+BW Nexus is only the browser; it still needs a **Wisp server** to carry traffic.
+The default is the free public `wss://wisp.mercurywork.shop/` — shared, rate
+limited, and often blocked on school networks. For anything permanent, run your
+own: `wisp/` in this repo is a ready-to-deploy server built on the current
+[`@mercuryworkshop/wisp-js`](https://github.com/MercuryWorkshop/wisp-js) (the
+older `wisp-server-node` is deprecated upstream).
 
 ```bash
-aws s3 mb s3://bw-nexus-example
-aws s3 website s3://bw-nexus-example --index-document index.html
+cd wisp
+npm install
+npm start          # listens on 0.0.0.0:5001
 ```
 
-Allow public reads with a bucket policy:
+Then paste your `wss://` URL into **Settings → Wisp server** in BW Nexus. It is
+stored in `localStorage`, so it survives reloads.
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "PublicRead",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::bw-nexus-example/*"
-    }
-  ]
-}
-```
+A Wisp server must be a long-lived Node process on a public host reachable over
+`wss://`. Static hosts (GitHub Pages, S3, Netlify) cannot run it.
+
+### Hosting it with no computer of your own
+
+**Render (free, keeps running):** on [render.com](https://render.com) choose
+**New → Blueprint**, pick this repository, and it reads `wisp/render.yaml` and
+deploys the service. You get `https://<name>.onrender.com`, so the Wisp URL is
+`wss://<name>.onrender.com`. Free instances sleep after ~15 minutes idle, so the
+first connection afterwards takes ~50 seconds to wake up.
+
+**GitHub Codespaces (quick test, not real hosting):** open the repo → **Code →
+Codespaces → create**. In its terminal:
 
 ```bash
-aws s3api put-bucket-policy --bucket bw-nexus-example --policy file://policy.json
-./deploy-aws.sh bw-nexus-example                 # upload every file
-./deploy-aws.sh bw-nexus-example E1234ABCDEF     # upload + bust the CDN cache
+cd wisp && npm install && npm start
 ```
 
-`deploy-aws.sh` uploads each file with the content type browsers expect
-(`.wasm` → `application/wasm`, `.js`/`.mjs` → `text/javascript`), leaves
-`index.html` and `sw.js` uncached, and caches the engine files for a year. Then
-create a CloudFront distribution pointing at the bucket with default root
-object `index.html` and "Redirect HTTP to HTTPS".
+Then open the **Ports** tab, right-click port 5001, **Port Visibility → Public**,
+and use `wss://<codespace-name>-5001.app.github.dev`. It genuinely works, but a
+codespace stops after ~30 minutes idle and the forwarded hostname changes when it
+is rebuilt, so use it for testing rather than daily use.
+
+An open Wisp server is an open proxy: anyone with the URL can route traffic
+through it. `wisp/server.mjs` blocks loopback/private/direct-IP targets and caps
+concurrent streams; add firewall or rate limits of your own if you publish it.
 
 ## Shortcuts
 
