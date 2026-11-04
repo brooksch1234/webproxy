@@ -1,17 +1,1536 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>Web Proxy Browser</title>
-    <meta name="description" content="Browse any website securely through our web proxy service. Fast, private, and easy to use." />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Outfit:wght@100..900&family=Oxanium:wght@200..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>BW Nexus — Search anything</title>
+		<meta name="description" content="BW Nexus is a fast, unblocked web proxy. Search or open any site through Scramjet." />
+		<meta name="color-scheme" content="dark" />
+		<meta name="theme-color" content="#05060f" />
+		<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="%23090b18"/><path d="M19 45V19l26 26V19" fill="none" stroke="%238b5cff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>' />
+		<style>
+			:root {
+				--bg: #05060f;
+				--text: #e9ecff;
+				--muted: #8b93b8;
+				--panel: rgba(17, 20, 38, 0.72);
+				--solid: #0d1022;
+				--line: rgba(255, 255, 255, 0.09);
+				--a: #8b5cff;
+				--b: #22d3ee;
+				--ok: #3ddc97;
+				--warn: #ffb020;
+				--err: #ff5c7a;
+				--top: 62px;
+				--r: 16px;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			html,
+			body {
+				height: 100%;
+			}
+
+			body {
+				margin: 0;
+				overflow: hidden;
+				background: var(--bg);
+				color: var(--text);
+				font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+					Helvetica, Arial, sans-serif;
+				-webkit-font-smoothing: antialiased;
+			}
+
+			body::before {
+				content: "";
+				position: fixed;
+				inset: 0;
+				z-index: 0;
+				pointer-events: none;
+				background:
+					radial-gradient(900px 600px at 10% -12%, rgba(139, 92, 255, 0.3), transparent 62%),
+					radial-gradient(820px 620px at 92% -6%, rgba(34, 211, 238, 0.16), transparent 62%),
+					radial-gradient(760px 520px at 50% 118%, rgba(139, 92, 255, 0.15), transparent 60%);
+			}
+
+			body::after {
+				content: "";
+				position: fixed;
+				inset: 0;
+				z-index: 0;
+				pointer-events: none;
+				background-image:
+					linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+					linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+				background-size: 56px 56px;
+				-webkit-mask-image: radial-gradient(circle at 50% 18%, #000 0%, transparent 76%);
+				mask-image: radial-gradient(circle at 50% 18%, #000 0%, transparent 76%);
+			}
+
+			/* ---------------- top bar ---------------- */
+
+			.topbar {
+				position: relative;
+				z-index: 10;
+				height: var(--top);
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 0 14px;
+				border-bottom: 1px solid var(--line);
+				background: rgba(7, 9, 20, 0.72);
+				backdrop-filter: blur(18px) saturate(140%);
+				-webkit-backdrop-filter: blur(18px) saturate(140%);
+			}
+
+			.brand {
+				display: flex;
+				align-items: center;
+				gap: 9px;
+				padding: 4px 6px 4px 2px;
+				border: 0;
+				background: none;
+				color: var(--text);
+				cursor: pointer;
+				font: inherit;
+			}
+
+			.brand .mark {
+				width: 30px;
+				height: 30px;
+				border-radius: 9px;
+				display: grid;
+				place-items: center;
+				background: linear-gradient(145deg, rgba(139, 92, 255, 0.95), rgba(34, 211, 238, 0.85));
+				box-shadow: 0 6px 22px rgba(139, 92, 255, 0.35);
+				flex: none;
+			}
+
+			.brand .mark svg {
+				width: 17px;
+				height: 17px;
+			}
+
+			.brand .word {
+				font-weight: 700;
+				letter-spacing: 0.16em;
+				font-size: 13px;
+				text-transform: uppercase;
+				white-space: nowrap;
+			}
+
+			.brand .word em {
+				font-style: normal;
+				background: linear-gradient(92deg, var(--a), var(--b));
+				-webkit-background-clip: text;
+				background-clip: text;
+				color: transparent;
+			}
+
+			.nav {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+			}
+
+			.icon-btn {
+				width: 34px;
+				height: 34px;
+				display: grid;
+				place-items: center;
+				border: 1px solid transparent;
+				border-radius: 10px;
+				background: transparent;
+				color: var(--muted);
+				cursor: pointer;
+				transition: 0.16s ease;
+				flex: none;
+			}
+
+			.icon-btn:hover:not(:disabled) {
+				color: var(--text);
+				background: rgba(255, 255, 255, 0.06);
+				border-color: var(--line);
+			}
+
+			.icon-btn:disabled {
+				opacity: 0.32;
+				cursor: default;
+			}
+
+			.icon-btn svg {
+				width: 17px;
+				height: 17px;
+			}
+
+			.omni {
+				flex: 1;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				height: 38px;
+				padding: 0 6px 0 12px;
+				border: 1px solid var(--line);
+				border-radius: 999px;
+				background: rgba(255, 255, 255, 0.045);
+				transition: 0.18s ease;
+			}
+
+			.omni:focus-within {
+				border-color: rgba(139, 92, 255, 0.65);
+				box-shadow: 0 0 0 3px rgba(139, 92, 255, 0.16);
+				background: rgba(255, 255, 255, 0.06);
+			}
+
+			.omni svg {
+				width: 15px;
+				height: 15px;
+				color: var(--muted);
+				flex: none;
+			}
+
+			.omni input {
+				flex: 1;
+				min-width: 0;
+				height: 100%;
+				border: 0;
+				background: none;
+				color: var(--text);
+				font: inherit;
+				font-size: 13.5px;
+				outline: none;
+			}
+
+			.omni input::placeholder {
+				color: #6f779c;
+			}
+
+			.omni .go {
+				height: 26px;
+				padding: 0 10px;
+				border: 0;
+				border-radius: 999px;
+				background: linear-gradient(120deg, var(--a), #6d7cff);
+				color: #fff;
+				font: inherit;
+				font-size: 12px;
+				font-weight: 600;
+				cursor: pointer;
+			}
+
+			.status {
+				display: inline-flex;
+				align-items: center;
+				gap: 7px;
+				height: 28px;
+				padding: 0 11px;
+				border: 1px solid var(--line);
+				border-radius: 999px;
+				background: rgba(255, 255, 255, 0.04);
+				color: var(--muted);
+				font-size: 11.5px;
+				letter-spacing: 0.02em;
+				white-space: nowrap;
+			}
+
+			.status .dot {
+				width: 7px;
+				height: 7px;
+				border-radius: 50%;
+				background: var(--muted);
+				box-shadow: 0 0 0 0 currentColor;
+			}
+
+			.status[data-state="starting"] .dot {
+				background: var(--warn);
+				animation: pulse 1.4s ease-in-out infinite;
+			}
+
+			.status[data-state="online"] .dot {
+				background: var(--ok);
+			}
+
+			.status[data-state="online"] {
+				color: #cfe9dd;
+			}
+
+			.status[data-state="offline"] .dot {
+				background: var(--err);
+			}
+
+			.status[data-state="offline"] {
+				color: #ffd7de;
+			}
+
+			@keyframes pulse {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.25;
+				}
+			}
+
+			/* ---------------- home ---------------- */
+
+			#home {
+				position: relative;
+				z-index: 2;
+				height: calc(100% - var(--top));
+				overflow: auto;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 26px;
+				padding: 40px 20px 64px;
+			}
+
+			body.is-browsing #home {
+				display: none;
+			}
+
+			.hero {
+				text-align: center;
+				max-width: 720px;
+			}
+
+			.eyebrow {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				padding: 5px 12px;
+				border: 1px solid var(--line);
+				border-radius: 999px;
+				background: rgba(255, 255, 255, 0.04);
+				color: var(--muted);
+				font-size: 11.5px;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				margin-bottom: 20px;
+			}
+
+			.eyebrow span {
+				width: 6px;
+				height: 6px;
+				border-radius: 50%;
+				background: var(--ok);
+			}
+
+			h1 {
+				margin: 0 0 14px;
+				font-size: clamp(38px, 8vw, 68px);
+				line-height: 1.02;
+				letter-spacing: -0.03em;
+				font-weight: 800;
+			}
+
+			h1 .shine {
+				background: linear-gradient(96deg, #cfc4ff 0%, var(--a) 34%, var(--b) 78%);
+				-webkit-background-clip: text;
+				background-clip: text;
+				color: transparent;
+			}
+
+			.lede {
+				margin: 0 auto;
+				max-width: 520px;
+				color: var(--muted);
+				font-size: 15.5px;
+			}
+
+			.searchshell {
+				width: min(660px, 100%);
+			}
+
+			.search {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				height: 60px;
+				padding: 0 8px 0 18px;
+				border: 1px solid var(--line);
+				border-radius: 18px;
+				background: var(--panel);
+				backdrop-filter: blur(14px);
+				box-shadow:
+					0 18px 50px -22px rgba(0, 0, 0, 0.9),
+					inset 0 1px 0 rgba(255, 255, 255, 0.06);
+				transition: 0.18s ease;
+			}
+
+			.search:focus-within {
+				border-color: rgba(139, 92, 255, 0.7);
+				box-shadow:
+					0 22px 60px -22px rgba(90, 60, 220, 0.55),
+					0 0 0 4px rgba(139, 92, 255, 0.14);
+			}
+
+			.search > svg {
+				width: 19px;
+				height: 19px;
+				color: var(--muted);
+				flex: none;
+			}
+
+			.search input {
+				flex: 1;
+				min-width: 0;
+				height: 100%;
+				border: 0;
+				background: none;
+				color: var(--text);
+				font: inherit;
+				font-size: 16px;
+				outline: none;
+			}
+
+			.search input::placeholder {
+				color: #6f779c;
+			}
+
+			.search .submit {
+				height: 42px;
+				padding: 0 20px;
+				border: 0;
+				border-radius: 12px;
+				background: linear-gradient(120deg, var(--a), #5f7bff);
+				color: #fff;
+				font: inherit;
+				font-weight: 650;
+				font-size: 14px;
+				cursor: pointer;
+				box-shadow: 0 10px 26px -12px rgba(139, 92, 255, 0.9);
+			}
+
+			.search .submit:hover {
+				filter: brightness(1.08);
+			}
+
+			.searchrow {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 12px;
+				margin-top: 12px;
+				padding: 0 6px;
+				color: var(--muted);
+				font-size: 12px;
+			}
+
+			.engines {
+				display: flex;
+				align-items: center;
+				gap: 4px;
+				padding: 3px;
+				border: 1px solid var(--line);
+				border-radius: 999px;
+				background: rgba(255, 255, 255, 0.03);
+			}
+
+			.engines button {
+				padding: 5px 11px;
+				border: 0;
+				border-radius: 999px;
+				background: none;
+				color: var(--muted);
+				font: inherit;
+				font-size: 12px;
+				cursor: pointer;
+				transition: 0.15s ease;
+			}
+
+			.engines button[aria-pressed="true"] {
+				background: rgba(139, 92, 255, 0.22);
+				color: #dcd6ff;
+				box-shadow: inset 0 0 0 1px rgba(139, 92, 255, 0.45);
+			}
+
+			.tiles {
+				width: min(720px, 100%);
+				display: grid;
+				grid-template-columns: repeat(4, minmax(0, 1fr));
+				gap: 10px;
+			}
+
+			.tile {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 12px;
+				border: 1px solid var(--line);
+				border-radius: 14px;
+				background: rgba(255, 255, 255, 0.03);
+				color: var(--text);
+				font: inherit;
+				font-size: 13px;
+				text-align: left;
+				cursor: pointer;
+				transition: 0.16s ease;
+			}
+
+			.tile:hover {
+				transform: translateY(-2px);
+				border-color: rgba(139, 92, 255, 0.45);
+				background: rgba(139, 92, 255, 0.1);
+			}
+
+			.tile .badge {
+				width: 28px;
+				height: 28px;
+				border-radius: 9px;
+				display: grid;
+				place-items: center;
+				font-weight: 700;
+				font-size: 13px;
+				color: #0b0d18;
+				flex: none;
+			}
+
+			.tile .name {
+				font-weight: 550;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.footnote {
+				position: relative;
+				z-index: 2;
+				margin-top: auto;
+				padding: 0 20px 8px;
+				color: #6d7597;
+				font-size: 11.5px;
+				text-align: center;
+			}
+
+			.footnote a {
+				color: #a99cff;
+				text-decoration: none;
+			}
+
+			/* ---------------- boot error ---------------- */
+
+			.error-card {
+				display: none;
+				width: min(560px, 100%);
+				padding: 18px 20px;
+				border: 1px solid rgba(255, 92, 122, 0.35);
+				border-radius: var(--r);
+				background: rgba(38, 12, 22, 0.72);
+				color: #ffd9e1;
+				font-size: 13.5px;
+			}
+
+			.error-card.show {
+				display: block;
+			}
+
+			.error-card h2 {
+				margin: 0 0 6px;
+				font-size: 14.5px;
+				color: #ffe9ee;
+			}
+
+			.error-card p {
+				margin: 0 0 12px;
+			}
+
+			.error-card code {
+				font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+				font-size: 12px;
+				word-break: break-word;
+			}
+
+			.error-card .row {
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+			}
+
+			.btn {
+				height: 34px;
+				padding: 0 14px;
+				border: 1px solid var(--line);
+				border-radius: 10px;
+				background: rgba(255, 255, 255, 0.06);
+				color: var(--text);
+				font: inherit;
+				font-size: 13px;
+				cursor: pointer;
+				transition: 0.16s ease;
+			}
+
+			.btn:hover {
+				background: rgba(255, 255, 255, 0.12);
+			}
+
+			.btn.primary {
+				border-color: transparent;
+				background: linear-gradient(120deg, var(--a), #5f7bff);
+				color: #fff;
+				font-weight: 600;
+			}
+
+			.btn.danger {
+				border-color: rgba(255, 92, 122, 0.4);
+				color: #ffc9d3;
+			}
+
+			/* ---------------- browser stage ---------------- */
+
+			#stage {
+				display: none;
+				position: fixed;
+				inset: var(--top) 0 0;
+				z-index: 1;
+				background: #0a0d1a;
+			}
+
+			body.is-browsing #stage {
+				display: block;
+			}
+
+			#frame-host {
+				position: absolute;
+				inset: 0;
+			}
+
+			/* Scramjet writes inline sizing on its iframe; keep it full-bleed. */
+			.proxy-frame {
+				position: absolute !important;
+				inset: 0 !important;
+				width: 100% !important;
+				height: 100% !important;
+				min-height: 100% !important;
+				border: 0;
+				display: block;
+				background: #fff;
+			}
+
+			#loader {
+				position: absolute;
+				inset: 0;
+				display: none;
+				place-items: center;
+				background: rgba(6, 8, 18, 0.86);
+				backdrop-filter: blur(6px);
+				z-index: 3;
+			}
+
+			#loader.show {
+				display: grid;
+			}
+
+			#loader .box {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 14px;
+			}
+
+			#loader .ring {
+				width: 42px;
+				height: 42px;
+				border-radius: 50%;
+				border: 3px solid rgba(255, 255, 255, 0.12);
+				border-top-color: var(--a);
+				border-right-color: var(--b);
+				animation: spin 0.85s linear infinite;
+			}
+
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+
+			#loader .label {
+				font-size: 12.5px;
+				color: var(--muted);
+				letter-spacing: 0.02em;
+				max-width: 70vw;
+				text-align: center;
+			}
+
+			#loader .hint {
+				font-size: 12px;
+				color: #ffcf9b;
+				max-width: 420px;
+				text-align: center;
+				display: none;
+				padding: 0 20px;
+			}
+
+			#loader.slow .hint {
+				display: block;
+			}
+
+			/* ---------------- settings ---------------- */
+
+			.backdrop {
+				position: fixed;
+				inset: 0;
+				z-index: 39;
+				background: rgba(3, 4, 10, 0.6);
+				opacity: 0;
+				pointer-events: none;
+				transition: 0.24s ease;
+			}
+
+			.backdrop.open {
+				opacity: 1;
+				pointer-events: auto;
+			}
+
+			.sheet {
+				position: fixed;
+				top: 0;
+				right: 0;
+				z-index: 40;
+				height: 100%;
+				width: min(392px, 94vw);
+				display: flex;
+				flex-direction: column;
+				background: var(--solid);
+				border-left: 1px solid var(--line);
+				transform: translateX(102%);
+				transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+			}
+
+			.sheet.open {
+				transform: none;
+			}
+
+			.sheet header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 10px;
+				padding: 16px 18px;
+				border-bottom: 1px solid var(--line);
+			}
+
+			.sheet header h2 {
+				margin: 0;
+				font-size: 15px;
+				letter-spacing: 0.01em;
+			}
+
+			.sheet .body {
+				padding: 18px;
+				overflow: auto;
+				display: flex;
+				flex-direction: column;
+				gap: 20px;
+			}
+
+			.field label {
+				display: block;
+				margin-bottom: 7px;
+				font-size: 12px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: var(--muted);
+			}
+
+			.field input,
+			.field select {
+				width: 100%;
+				height: 40px;
+				padding: 0 12px;
+				border: 1px solid var(--line);
+				border-radius: 11px;
+				background: rgba(255, 255, 255, 0.04);
+				color: var(--text);
+				font: inherit;
+				font-size: 13.5px;
+				outline: none;
+			}
+
+			.field input:focus,
+			.field select:focus {
+				border-color: rgba(139, 92, 255, 0.6);
+			}
+
+			.field .help {
+				margin: 7px 0 0;
+				font-size: 11.5px;
+				color: #6f779c;
+				line-height: 1.5;
+			}
+
+			.meta {
+				display: grid;
+				grid-template-columns: auto 1fr;
+				gap: 6px 14px;
+				font-size: 12px;
+				color: var(--muted);
+				padding: 12px 14px;
+				border: 1px solid var(--line);
+				border-radius: 12px;
+				background: rgba(255, 255, 255, 0.02);
+			}
+
+			.meta b {
+				color: var(--text);
+				font-weight: 550;
+				text-align: right;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.sheet .actions {
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+			}
+
+			hr.sep {
+				border: 0;
+				border-top: 1px solid var(--line);
+				margin: 0;
+			}
+
+			/* ---------------- toast ---------------- */
+
+			#toast {
+				position: fixed;
+				left: 50%;
+				bottom: 22px;
+				transform: translate(-50%, 20px);
+				z-index: 60;
+				max-width: min(520px, 92vw);
+				padding: 11px 16px;
+				border: 1px solid var(--line);
+				border-left: 3px solid var(--a);
+				border-radius: 12px;
+				background: rgba(14, 17, 33, 0.96);
+				color: var(--text);
+				font-size: 13px;
+				opacity: 0;
+				pointer-events: none;
+				transition: 0.22s ease;
+				box-shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.9);
+			}
+
+			#toast.show {
+				opacity: 1;
+				transform: translate(-50%, 0);
+			}
+
+			#toast[data-kind="error"] {
+				border-left-color: var(--err);
+			}
+
+			#toast[data-kind="ok"] {
+				border-left-color: var(--ok);
+			}
+
+			/* ---------------- small screens ---------------- */
+
+			@media (max-width: 720px) {
+				:root {
+					--top: 56px;
+				}
+
+				.tiles {
+					grid-template-columns: repeat(2, minmax(0, 1fr));
+				}
+
+				.brand .word {
+					display: none;
+				}
+
+				.status span:not(.dot) {
+					display: none;
+				}
+
+				.nav .desk {
+					display: none;
+				}
+
+				.search {
+					height: 54px;
+				}
+
+				.searchrow {
+					display: none;
+				}
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="topbar">
+			<button class="brand" id="brand" type="button" aria-label="BW Nexus home">
+				<span class="mark" aria-hidden="true">
+					<svg viewBox="0 0 24 24" fill="none" stroke="#0b0d18" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M5 19V5l14 14V5" />
+					</svg>
+				</span>
+				<span class="word">BW <em>Nexus</em></span>
+			</button>
+
+			<div class="nav">
+				<button class="icon-btn" id="btn-back" type="button" aria-label="Back" disabled>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+				</button>
+				<button class="icon-btn desk" id="btn-forward" type="button" aria-label="Forward" disabled>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+				</button>
+				<button class="icon-btn " id="btn-reload" type="button" aria-label="Reload" disabled>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+				</button>
+			</div>
+
+			<form class="omni" id="omni" autocomplete="off">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
+				<input id="address" name="address" type="text" spellcheck="false" placeholder="Search or enter a URL" aria-label="Address and search bar" />
+				<button class="go" type="submit">Go</button>
+			</form>
+
+			<div class="status" id="status" data-state="starting" title="Engine status">
+				<span class="dot" aria-hidden="true"></span><span id="status-text">Starting…</span>
+			</div>
+
+			<button class="icon-btn desk" id="btn-newtab" type="button" aria-label="Open current page in a new tab" disabled>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+			</button>
+
+			<button class="icon-btn" id="btn-settings" type="button" aria-label="Settings">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.05A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.05A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6h.09A1.7 1.7 0 0 0 10 3.05V3a2 2 0 1 1 4 0v.05A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.05a1.7 1.7 0 0 0-1.55 1z"/></svg>
+			</button>
+		</header>
+
+		<main id="home">
+			<div class="hero">
+				<div class="eyebrow"><span></span> Scramjet engine · BW Nexus</div>
+				<h1>Search <span class="shine">anything</span>.</h1>
+				<p class="lede">
+					One box for the whole web. Type a search, paste a link, or jump to a
+					favourite — BW Nexus opens it through a private proxy.
+				</p>
+			</div>
+
+			<div class="searchshell">
+				<form class="search" id="search" autocomplete="off">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
+					<input id="search-input" type="text" spellcheck="false" placeholder="Search the web or enter a website…" aria-label="Search or enter a website" />
+					<button class="submit" type="submit">Open</button>
+				</form>
+				<div class="searchrow">
+					<div class="engines" id="engines" role="group" aria-label="Search engine"></div>
+					<span id="engine-hint">↵ to open · searches use Google</span>
+				</div>
+			</div>
+
+			<div class="error-card" id="error-card" role="alert">
+				<h2>BW Nexus could not start</h2>
+				<p id="error-text"></p>
+				<p style="opacity: 0.75; margin-bottom: 10px">
+					The most common causes are a blocked Wisp server, an offline connection,
+					or this page being served without HTTPS.
+				</p>
+				<div class="row">
+					<button class="btn primary" type="button" id="error-retry">Retry</button>
+					<button class="btn" type="button" id="error-settings">Open settings</button>
+				</div>
+			</div>
+
+			<div class="tiles" id="tiles"></div>
+
+			<div class="footnote">
+				Powered by <a href="https://github.com/MercuryWorkshop/scramjet" target="_blank" rel="noreferrer noopener">Scramjet</a>
+				· <span id="version">engine</span> · Use responsibly and follow your network's rules.
+			</div>
+		</main>
+
+		<section id="stage" aria-label="Proxied page">
+			<div id="frame-host"></div>
+			<div id="loader">
+				<div class="box">
+					<div class="ring"></div>
+					<div class="label" id="loader-label">Opening through BW Nexus…</div>
+					<div class="hint">
+						Taking a while? The site may be heavy, or the public Wisp server may be
+						busy — you can point BW Nexus at your own server in settings.
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<div class="backdrop" id="backdrop"></div>
+		<aside class="sheet" id="sheet" aria-label="Settings" aria-hidden="true">
+			<header>
+				<h2>BW Nexus settings</h2>
+				<button class="icon-btn" type="button" id="sheet-close" aria-label="Close settings">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+				</button>
+			</header>
+			<div class="body">
+				<div class="field">
+					<label for="wisp-input">Wisp server</label>
+					<input id="wisp-input" type="text" spellcheck="false" placeholder="wss://wisp.example.com/" />
+					<p class="help">
+						Traffic leaves through this server. The default is a free public
+						instance; for anything permanent, host your own
+						<code>wisp-server-node</code> and paste its <code>wss://</code> URL here.
+					</p>
+				</div>
+
+				<div class="field">
+					<label for="search-engine">Search engine</label>
+					<select id="search-engine"></select>
+					<p class="help">Used when what you type is not a URL.</p>
+				</div>
+
+				<div class="actions">
+					<button class="btn primary" type="button" id="save-settings">Save &amp; reconnect</button>
+					<button class="btn" type="button" id="reset-wisp">Use default</button>
+				</div>
+
+				<hr class="sep" />
+
+				<div class="meta">
+					<span>Engine</span><b id="meta-engine">Scramjet</b>
+					<span>Transport</span><b id="meta-transport">—</b>
+					<span>Prefix</span><b>/scramjet/</b>
+					<span>Service worker</span><b id="meta-sw">—</b>
+				</div>
+
+				<div class="actions">
+					<button class="btn" type="button" id="restart">Restart BW Nexus</button>
+					<button class="btn danger" type="button" id="clear">Clear cache &amp; reset</button>
+				</div>
+
+				<p class="help">
+					BW Nexus is a thin browser for the open-source Scramjet proxy. It does not
+					host a proxy server itself; it connects to the Wisp server above.
+				</p>
+			</div>
+		</aside>
+
+		<div id="toast" role="status" aria-live="polite"></div>
+
+		<script src="/scramjet.all.js"></script>
+		<script type="module">
+			import { BareMuxConnection } from "/baremux.mjs";
+
+			const PREFIX = "/scramjet/";
+			const FILES = {
+				wasm: "/scramjet.wasm.wasm",
+				all: "/scramjet.all.js",
+				sync: "/scramjet.sync.js",
+			};
+			const DEFAULT_WISP = "wss://wisp.mercurywork.shop/";
+
+			const ENGINES = {
+				google: { label: "Google", url: "https://www.google.com/search?q=%s" },
+				duckduckgo: { label: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
+				bing: { label: "Bing", url: "https://www.bing.com/search?q=%s" },
+				brave: { label: "Brave", url: "https://search.brave.com/search?q=%s" },
+			};
+
+			const TILES = [
+				{ name: "YouTube", url: "https://www.youtube.com", color: "#ff5f5f", letter: "Y" },
+				{ name: "Reddit", url: "https://www.reddit.com", color: "#ff8a4c", letter: "R" },
+				{ name: "Discord", url: "https://discord.com/app", color: "#8b9bff", letter: "D" },
+				{ name: "Wikipedia", url: "https://en.wikipedia.org", color: "#cfd6e6", letter: "W" },
+				{ name: "GitHub", url: "https://github.com", color: "#a0a8bd", letter: "G" },
+				{ name: "Twitch", url: "https://www.twitch.tv", color: "#b98cff", letter: "T" },
+				{ name: "Spotify", url: "https://open.spotify.com", color: "#62e08a", letter: "S" },
+				{ name: "X", url: "https://x.com", color: "#cfd6e6", letter: "X" },
+			];
+
+			const $ = (id) => document.getElementById(id);
+			const store = {
+				get(key, fallback) {
+					try {
+						const value = localStorage.getItem("bwnexus." + key);
+						return value === null ? fallback : value;
+					} catch {
+						return fallback;
+					}
+				},
+				set(key, value) {
+					try {
+						localStorage.setItem("bwnexus." + key, value);
+					} catch {
+						/* storage may be disabled */
+					}
+				},
+			};
+
+			const state = {
+				controller: null,
+				frame: null,
+				mux: null,
+				ready: false,
+				browsing: false,
+				current: "",
+				engineKey: store.get("engine", "google"),
+				wisp: store.get("wisp", DEFAULT_WISP),
+				loaderTimer: 0,
+				slowTimer: 0,
+				toastTimer: 0,
+			};
+
+			const el = {
+				home: $("home"),
+				stage: $("stage"),
+				frameHost: $("frame-host"),
+				loader: $("loader"),
+				loaderLabel: $("loader-label"),
+				status: $("status"),
+				statusText: $("status-text"),
+				address: $("address"),
+				omni: $("omni"),
+				search: $("search"),
+				searchInput: $("search-input"),
+				engines: $("engines"),
+				engineHint: $("engine-hint"),
+				tiles: $("tiles"),
+				sheet: $("sheet"),
+				backdrop: $("backdrop"),
+				wispInput: $("wisp-input"),
+				searchEngine: $("search-engine"),
+				metaTransport: $("meta-transport"),
+				metaEngine: $("meta-engine"),
+				metaSw: $("meta-sw"),
+				version: $("version"),
+				errorCard: $("error-card"),
+				errorText: $("error-text"),
+				toast: $("toast"),
+				back: $("btn-back"),
+				forward: $("btn-forward"),
+				reload: $("btn-reload"),
+				newtab: $("btn-newtab"),
+			};
+
+			/* ------------------------------ helpers ------------------------------ */
+
+			function toast(message, kind = "info") {
+				clearTimeout(state.toastTimer);
+				el.toast.textContent = message;
+				el.toast.dataset.kind = kind;
+				el.toast.classList.add("show");
+				state.toastTimer = setTimeout(() => el.toast.classList.remove("show"), 4800);
+			}
+
+			function setStatus(kind, text) {
+				el.status.dataset.state = kind;
+				el.statusText.textContent = text;
+			}
+
+			function showLoader(label) {
+				el.loaderLabel.textContent = label || "Opening through BW Nexus…";
+				el.loader.classList.add("show");
+				el.loader.classList.remove("slow");
+				clearTimeout(state.slowTimer);
+				state.slowTimer = setTimeout(() => el.loader.classList.add("slow"), 9000);
+			}
+
+			function hideLoader() {
+				el.loader.classList.remove("show", "slow");
+				clearTimeout(state.slowTimer);
+			}
+
+			function showError(err) {
+				el.errorText.textContent =
+					err && err.message ? err.message : String(err || "Unknown error");
+				el.errorCard.classList.add("show");
+			}
+
+			function clearError() {
+				el.errorCard.classList.remove("show");
+			}
+
+			function enterBrowse() {
+				state.browsing = true;
+				document.body.classList.add("is-browsing");
+				el.back.disabled = !state.ready;
+				el.forward.disabled = !state.ready;
+				el.reload.disabled = !state.ready;
+				el.newtab.disabled = !state.current;
+			}
+
+			function goHome() {
+				state.browsing = false;
+				document.body.classList.remove("is-browsing");
+				el.address.value = "";
+				hideLoader();
+			}
+
+			/* --------------------------- input resolution --------------------------- */
+
+			function resolveTarget(raw) {
+				const value = String(raw || "").trim();
+				if (!value) return null;
+
+				if (/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) return value;
+				if (/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?([/?#]|$)/i.test(value)) {
+					return "http://" + value;
+				}
+				if (/^(?!.*\s)([\w-]+\.)+[a-z]{2,}(:\d+)?([/?#].*)?$/i.test(value)) {
+					return "https://" + value;
+				}
+
+				const engine = ENGINES[state.engineKey] || ENGINES.google;
+				return engine.url.replace("%s", encodeURIComponent(value));
+			}
+
+			/* ------------------------------ navigation ------------------------------ */
+
+			function navigate(raw) {
+				const url = resolveTarget(raw);
+				if (!url) return;
+
+				if (!state.ready) {
+					toast("The engine is still starting — give it a second and try again.");
+					enterBrowse();
+					showLoader("Waiting for the engine…");
+					return;
+				}
+
+				enterBrowse();
+				el.address.value = url;
+				state.current = url;
+				showLoader("Opening " + prettyHost(url) + " …");
+
+				clearTimeout(state.loaderTimer);
+				state.loaderTimer = setTimeout(() => {
+					hideLoader();
+					toast("Still loading. If nothing appears, try another Wisp server in settings.");
+				}, 25000);
+
+				try {
+					state.frame.go(url);
+				} catch (err) {
+					hideLoader();
+					toast("Could not open that page: " + (err && err.message ? err.message : err), "error");
+				}
+			}
+
+			function prettyHost(url) {
+				try {
+					return new URL(url).host;
+				} catch {
+					return url;
+				}
+			}
+
+			/* -------------------------------- engine -------------------------------- */
+
+			async function connectTransport(wispUrl) {
+				if (!state.mux) state.mux = new BareMuxConnection("/mux.js");
+				await state.mux.setTransport("/epoxy.mjs", [{ wisp: wispUrl }]);
+				const name = await state.mux.getTransport().catch(() => "epoxy");
+				el.metaTransport.textContent = name || "epoxy";
+				return name;
+			}
+
+			async function boot() {
+				clearError();
+				setStatus("starting", "Starting…");
+				el.metaSw.textContent = "registering…";
+
+				try {
+					if (!("serviceWorker" in navigator)) {
+						throw new Error(
+							"Service workers are not available. Open BW Nexus over HTTPS (or localhost) in a current browser."
+						);
+					}
+
+					if (typeof $scramjetLoadController !== "function") {
+						throw new Error(
+							"The Scramjet engine bundle did not load (scramjet.all.js is missing or blocked)."
+						);
+					}
+
+					// Seed Scramjet's shared config database before the service worker
+					// starts. If the worker opens the database first it does so without
+					// Scramjet's object stores, which leaves the engine unable to boot.
+					const { ScramjetController } = $scramjetLoadController();
+					state.controller = new ScramjetController({ prefix: PREFIX, files: FILES });
+					await state.controller.init();
+
+					const registration = await navigator.serviceWorker.register("/sw.js", {
+						scope: "/",
+					});
+					await navigator.serviceWorker.ready;
+					el.metaSw.textContent = registration.active ? "active" : "installing";
+
+					if (!navigator.serviceWorker.controller) {
+						await new Promise((resolve) => {
+							const timer = setTimeout(resolve, 2500);
+							navigator.serviceWorker.addEventListener(
+								"controllerchange",
+								() => {
+									clearTimeout(timer);
+									resolve();
+								},
+								{ once: true }
+							);
+						});
+					}
+
+					state.frame = state.controller.createFrame();
+					state.frame.frame.className = "proxy-frame";
+					state.frame.frame.title = "BW Nexus proxied page";
+					el.frameHost.appendChild(state.frame.frame);
+
+					state.frame.frame.addEventListener("load", () => {
+						hideLoader();
+						el.newtab.disabled = !state.current;
+					});
+
+					state.frame.addEventListener("navigate", () => {
+						showLoader("Opening " + (state.current ? prettyHost(state.current) : "page") + " …");
+					});
+
+					state.frame.addEventListener("urlchange", (event) => {
+						state.current = event.url;
+						if (document.activeElement !== el.address) el.address.value = event.url;
+						el.newtab.disabled = false;
+						hideLoader();
+					});
+
+					await connectTransport(state.wisp);
+
+					state.ready = true;
+					setStatus("online", "Engine online");
+					el.back.disabled = false;
+					el.forward.disabled = false;
+					el.reload.disabled = false;
+					el.searchInput.focus({ preventScroll: true });
+				} catch (err) {
+					console.error("[BW Nexus] boot failed", err);
+					setStatus("offline", "Engine offline");
+					showError(err);
+					hideLoader();
+					toast("BW Nexus could not start. Check the connection details in settings.", "error");
+				}
+			}
+
+			/* ------------------------------- settings ------------------------------- */
+
+			function openSheet() {
+				el.sheet.classList.add("open");
+				el.sheet.setAttribute("aria-hidden", "false");
+				el.backdrop.classList.add("open");
+				el.wispInput.value = state.wisp;
+				el.searchEngine.value = state.engineKey;
+				if (typeof $scramjetVersion === "object" && $scramjetVersion) {
+					el.metaEngine.textContent =
+						"Scramjet " + ($scramjetVersion.version || $scramjetVersion.build || "1.x");
+				}
+			}
+
+			function closeSheet() {
+				el.sheet.classList.remove("open");
+				el.sheet.setAttribute("aria-hidden", "true");
+				el.backdrop.classList.remove("open");
+			}
+
+			async function saveSettings() {
+				const wisp = (el.wispInput.value || "").trim() || DEFAULT_WISP;
+				if (!/^wss?:\/\//i.test(wisp)) {
+					toast("A Wisp server URL needs to start with wss:// (or ws:// locally).", "error");
+					return;
+				}
+
+				state.wisp = wisp;
+				store.set("wisp", wisp);
+
+				state.engineKey = el.searchEngine.value;
+				store.set("engine", state.engineKey);
+				renderEngines();
+
+				if (!state.ready) {
+					toast("Settings saved. Retrying the engine…");
+					closeSheet();
+					boot();
+					return;
+				}
+
+				try {
+					await connectTransport(wisp);
+					setStatus("online", "Engine online");
+					toast("Connected through the new Wisp server.", "ok");
+					closeSheet();
+				} catch (err) {
+					setStatus("offline", "Engine offline");
+					toast("Could not reach that Wisp server: " + (err && err.message ? err.message : err), "error");
+				}
+			}
+
+			async function resetEverything() {
+				try {
+					localStorage.removeItem("bwnexus.wisp");
+					localStorage.removeItem("bwnexus.engine");
+					if (window.caches) {
+						const keys = await caches.keys();
+						await Promise.all(keys.map((key) => caches.delete(key)));
+					}
+					const registrations = await navigator.serviceWorker.getRegistrations();
+					await Promise.all(registrations.map((registration) => registration.unregister()));
+				} catch {
+					/* best effort */
+				}
+				location.reload();
+			}
+
+			/* -------------------------------- wiring -------------------------------- */
+
+			function renderEngines() {
+				el.engines.replaceChildren();
+				el.searchEngine.replaceChildren();
+
+				for (const [key, engine] of Object.entries(ENGINES)) {
+					const button = document.createElement("button");
+					button.type = "button";
+					button.textContent = engine.label;
+					button.setAttribute("aria-pressed", String(key === state.engineKey));
+					button.addEventListener("click", () => {
+						state.engineKey = key;
+						store.set("engine", key);
+						renderEngines();
+					});
+					el.engines.appendChild(button);
+
+					const option = document.createElement("option");
+					option.value = key;
+					option.textContent = engine.label;
+					el.searchEngine.appendChild(option);
+				}
+
+				el.searchEngine.value = state.engineKey;
+				const label = (ENGINES[state.engineKey] || ENGINES.google).label;
+				el.engineHint.textContent = "↵ to open · searches use " + label;
+			}
+
+			function renderTiles() {
+				el.tiles.replaceChildren();
+				for (const tile of TILES) {
+					const button = document.createElement("button");
+					button.type = "button";
+					button.className = "tile";
+					button.title = tile.url;
+
+					const badge = document.createElement("span");
+					badge.className = "badge";
+					badge.style.background = tile.color;
+					badge.textContent = tile.letter;
+
+					const name = document.createElement("span");
+					name.className = "name";
+					name.textContent = tile.name;
+
+					button.append(badge, name);
+					button.addEventListener("click", () => navigate(tile.url));
+					el.tiles.appendChild(button);
+				}
+			}
+
+			el.search.addEventListener("submit", (event) => {
+				event.preventDefault();
+				navigate(el.searchInput.value);
+			});
+
+			el.omni.addEventListener("submit", (event) => {
+				event.preventDefault();
+				navigate(el.address.value);
+				el.address.blur();
+			});
+
+			el.searchEngine.addEventListener("change", () => {
+				state.engineKey = el.searchEngine.value;
+				store.set("engine", state.engineKey);
+				renderEngines();
+			});
+
+			$("brand").addEventListener("click", goHome);
+			el.back.addEventListener("click", () => state.frame && state.frame.back());
+			el.forward.addEventListener("click", () => state.frame && state.frame.forward());
+			el.reload.addEventListener("click", () => state.frame && state.frame.reload());
+			el.newtab.addEventListener("click", () => {
+				if (!state.current || !state.controller) return;
+				const encoded = state.controller.encodeUrl
+					? state.controller.encodeUrl(state.current)
+					: PREFIX + encodeURIComponent(state.current);
+				window.open(location.origin + encoded, "_blank", "noopener");
+			});
+
+			$("btn-settings").addEventListener("click", openSheet);
+			$("sheet-close").addEventListener("click", closeSheet);
+			el.backdrop.addEventListener("click", closeSheet);
+			$("save-settings").addEventListener("click", saveSettings);
+			$("reset-wisp").addEventListener("click", () => {
+				el.wispInput.value = DEFAULT_WISP;
+			});
+			$("restart").addEventListener("click", () => location.reload());
+			$("clear").addEventListener("click", resetEverything);
+			$("error-retry").addEventListener("click", boot);
+			$("error-settings").addEventListener("click", openSheet);
+
+			document.addEventListener("keydown", (event) => {
+				const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+				const meta = event.ctrlKey || event.metaKey;
+
+				if (meta && event.key.toLowerCase() === "l") {
+					event.preventDefault();
+					(state.browsing ? el.address : el.searchInput).focus();
+					if (state.browsing) el.address.select();
+					return;
+				}
+
+				if (meta && event.key === ",") {
+					event.preventDefault();
+					openSheet();
+					return;
+				}
+
+				if (event.key === "/" && !typing) {
+					event.preventDefault();
+					(state.browsing ? el.address : el.searchInput).focus();
+					return;
+				}
+
+				if (event.key === "Escape") {
+					if (el.sheet.classList.contains("open")) {
+						closeSheet();
+					} else if (typing) {
+						document.activeElement.blur();
+					} else if (state.browsing) {
+						goHome();
+					}
+					return;
+				}
+
+				if (event.altKey && event.key === "ArrowLeft" && state.frame) {
+					event.preventDefault();
+					state.frame.back();
+				}
+				if (event.altKey && event.key === "ArrowRight" && state.frame) {
+					event.preventDefault();
+					state.frame.forward();
+				}
+			});
+
+			if (typeof $scramjetVersion === "object" && $scramjetVersion) {
+				el.version.textContent = "Scramjet " + ($scramjetVersion.version || $scramjetVersion.build || "1.x");
+				el.metaEngine.textContent = el.version.textContent;
+			}
+
+			renderEngines();
+			renderTiles();
+			boot();
+		</script>
+	</body>
 </html>
